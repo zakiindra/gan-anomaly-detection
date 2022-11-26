@@ -1,1 +1,13 @@
-CUDA_VISIBLE_DEVICES=0 python main.py --mode train --dataset Covid --image_dir datasets/covid --image_size 256 --sample_dir covid/samples --log_dir covid/logs --model_save_dir covid/models --result_dir covid/result --num_iters 400000 --batch_size 16
+CUDA_VISIBLE_DEVICES=0 python main.py \
+--mode train \
+--dataset Covid \
+--image_dir datasets/covid \
+--image_size 256 \
+--sample_dir covid/samples \
+--log_dir covid/logs \
+--model_save_dir covid/models \
+--result_dir covid/result \
+--num_iters 1000 \
+--batch_size 16 \
+--g_repeat_num 2 \
+--d_repeat_num 2

@@ -1,12 +1,16 @@
 import os
 import argparse
+import torch
 from solver import Solver
 from data_loader import get_loader
 from torch.backends import cudnn
+from model import Generator
+from model import Discriminator
 
 
 def str2bool(v):
-    return v.lower() in ('true')
+    return v.lower() in 'true'
+
 
 def main(config):
     # For fast training.
@@ -22,26 +26,22 @@ def main(config):
     if not os.path.exists(config.result_dir):
         os.makedirs(config.result_dir)
 
-    # Data loader.
-    data_loader = None
-
-    if config.dataset in ['Covid']:
-        data_loader = get_loader(config.image_dir, config.image_size, config.batch_size,
-                                 'Covid', config.mode, config.num_workers)
+    data_loader = get_loader()
         
     # Solver for training and testing HealthyGAN.
-    solver = Solver(data_loader, config)
-    
+    generator = Generator(config.g_conv_dim, 0, config.g_repeat_num)
+    discriminator = Discriminator(config.image_size, config.d_conv_dim, config.d_repeat_num)
+    generator_optim = torch.optim.Adam(generator.parameters(), config.g_lr, (config.beta1, config.beta2))
+    discriminator_optim = torch.optim.Adam(discriminator.parameters(), config.d_lr, (config.beta1, config.beta2))
+
+    solver = Solver(data_loader, generator, discriminator, generator_optim, discriminator_optim, config)
 
     if config.mode == 'train':
-        if config.dataset in ['Covid']: # add more datasets here
-            solver.train()
+        solver.train()
     elif config.mode == 'test':
-        if config.dataset in ['Covid']: # add more datasets here
-            solver.test()
+        solver.test()
     elif config.mode == 'testAUC':
-        if config.dataset in ['Covid']:  # add more datasets here
-            solver.testAUC()
+        solver.testAUC()
 
 
 if __name__ == '__main__':
@@ -49,8 +49,8 @@ if __name__ == '__main__':
 
     # Model configuration.
     parser.add_argument('--image_size', type=int, default=128, help='image resolution')
-    parser.add_argument('--g_conv_dim', type=int, default=64, help='number of conv filters in the first layer of G')
-    parser.add_argument('--d_conv_dim', type=int, default=64, help='number of conv filters in the first layer of D')
+    parser.add_argument('--g_conv_dim', type=int, default=32, help='number of conv filters in the first layer of G')
+    parser.add_argument('--d_conv_dim', type=int, default=32, help='number of conv filters in the first layer of D')
     parser.add_argument('--g_repeat_num', type=int, default=6, help='number of residual blocks in G')
     parser.add_argument('--d_repeat_num', type=int, default=6, help='number of strided conv layers in D')
     parser.add_argument('--lambda_cls', type=float, default=0, help='weight for domain classification loss')
